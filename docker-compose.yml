@@ -25,5 +25,8 @@ services:
     build:
       context: .
       dockerfile: BlogService/Dockerfile
+    ports:
+        - '32788:443'
+        - '32799:80'
     links:
       - mongo

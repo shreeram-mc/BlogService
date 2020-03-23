@@ -62,7 +62,7 @@ namespace BlogService.DataContexts
         }
 
         public async Task<UpdateResult> Update(FilterDefinition<T> filters, UpdateDefinition<T> updates)
-        {
+        {   
            return await _db.GetCollection<T>(typeof(T).Name).UpdateOneAsync(filters,updates);
         }
 

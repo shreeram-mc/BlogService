@@ -11,7 +11,9 @@ namespace BlogService.Repository
         Task<IEnumerable<ArticlesInfo>> GetAll();
          
         Task<ArticlesInfo> Get(string name);
-        
+
+        Task<ArticlesInfo> GetById(string id);
+
         Task Create(ArticlesInfo articlesInfo);
       
         Task<bool> Update(ArticlesInfo articlesInfo);
@@ -19,6 +21,8 @@ namespace BlogService.Repository
         Task<bool> Delete(string name);
 
         Task<bool> UpVote(string articleName);
+
+        Task<bool> UpdateComments(string articleName, Comment comments);
     }
 
     public class ArticlesInfoRepository : IArticlesInfoRepository
@@ -45,6 +49,15 @@ namespace BlogService.Repository
             return result;
         }
 
+        public async Task<ArticlesInfo> GetById(string id)
+        {
+            FilterDefinition<ArticlesInfo> filter = Builders<ArticlesInfo>.Filter.Eq(m => m.Id, id);
+            var result = await _context.GetAll.Find(filter).FirstOrDefaultAsync();
+
+            return result;
+        }
+
+
         public async Task Create(ArticlesInfo articlesInfo)
         {
             await _context.InsertOneAsync(articlesInfo);
@@ -65,8 +78,7 @@ namespace BlogService.Repository
 
             var update = Builders<ArticlesInfo>.Update
                         .Set("Name", articlesInfo.Name)
-                        .Set("UpVotes", articlesInfo.UpVotes)
-                        .Set("Comments", articlesInfo.Comments);
+                        .Set("Text", articlesInfo.Text);                                                
 
             var result = await _context.Update(filter, update);
 
@@ -77,12 +89,43 @@ namespace BlogService.Repository
         {
             var article = Get(articleName).Result;
 
+            if (article == null)
+                return false;
+
             FilterDefinition<ArticlesInfo> filter = Builders<ArticlesInfo>.Filter.Eq(m => m.Id, article.Id.ToString());
 
             var count = article.UpVotes + 1;
             var update = Builders<ArticlesInfo>.Update
                         .Set("UpVotes", count);
                         
+            var result = await _context.Update(filter, update);
+
+            return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
+
+        public async Task<bool> UpdateComments(string articleName, Comment comments)
+        {
+            var article = Get(articleName).Result;
+            if (article == null)
+                return false;
+
+            FilterDefinition<ArticlesInfo> filter = Builders<ArticlesInfo>.Filter.Eq(m => m.Id, article.Id.ToString());
+            UpdateDefinition<ArticlesInfo> update;
+
+            if (article.Comments != null)
+                update = Builders<ArticlesInfo>.Update
+                           .AddToSet("Comments", comments);
+            else
+            {
+                var com = new List<Comment>
+                {
+                    comments
+                };
+
+                update = Builders<ArticlesInfo>.Update
+                           .Set("Comments", com);
+            }
+
             var result = await _context.Update(filter, update);
 
             return result.IsAcknowledged && result.ModifiedCount > 0;

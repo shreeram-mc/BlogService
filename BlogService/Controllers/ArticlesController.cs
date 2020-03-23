@@ -18,54 +18,112 @@ namespace BlogService.Controllers
             _repo = repo;
         }
 
-        [HttpGet]   
+        [HttpGet]
         [Route("{name}")]
         public async Task<ActionResult<ArticlesInfo>> Get(string name)
         {
             return Ok(await _repo.Get(name));
         }
 
-        
-        [HttpGet]        
+
+        [HttpGet]
         public async Task<ActionResult<ArticlesInfo>> GetAll()
         {
             return Ok(await _repo.GetAll());
         }
 
-        
+
         [HttpPost]
         public async Task<ActionResult<ArticlesInfo>> Create(ArticlesInfo info)
         {
             try
             {
                 await _repo.Create(info);
-                return Ok();
+                return Ok(GetByNameOrId(null, info.Name));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
-            
+
         }
 
         [HttpPut]
         public async Task<ActionResult<bool>> Update(ArticlesInfo info)
-        {   
-                return Ok(await _repo.Update(info));
+        {
+            try
+            {
+                if (await _repo.Update(info))
+                {
+                    return Ok(GetByNameOrId(info.Id));
+                }
+
+                return BadRequest("Update Failed");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete]
         public async Task<ActionResult<bool>> Delete(ArticlesInfo info)
         {
-            return Ok(await _repo.Delete(info.Name));
+            try
+            {
+                return Ok(await _repo.Delete(info.Name));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
-
-
 
         [HttpGet("{name}/upvote")]
         public async Task<ActionResult<bool>> UpVote(string name)
         {
-            return Ok(await _repo.UpVote(name));
+            try
+            {
+                if (await _repo.UpVote(name))
+                    return Ok(GetByNameOrId(null, name));
+
+                return BadRequest($"Failed to upvote for {name}");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpPost("{name}/add-comment")]
+        public async Task<ActionResult<bool>> AddComment(string name, Comment comment)
+        {
+            try
+            {
+                if (await _repo.UpdateComments(name, comment))
+                    return Ok(GetByNameOrId(null, name));
+
+                return BadRequest($"Failed to add comments for {name}");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+        }
+
+        private ArticlesInfo GetByNameOrId(string id = null, string name = null)
+        {
+            if (id != null)
+            {
+                return _repo.GetById(id).Result;
+            }
+            else if (name != null)
+                return _repo.Get(name).Result;
+
+            return null;
+
         }
     }
 }
