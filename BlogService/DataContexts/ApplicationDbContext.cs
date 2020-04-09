@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using BlogService.Models;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace BlogService.DataContexts
@@ -20,22 +16,26 @@ namespace BlogService.DataContexts
 
         private MongoClient InitializeDatabase(IOptions<Settings> options)
         {
-            var address = new MongoServerAddress("mongo");
-
-            var username = "root";
-            var password = "example";
-            var mongoDbAuthMechanism = "SCRAM-SHA-1";
-            MongoInternalIdentity internalIdentity = new MongoInternalIdentity("admin", username);
-            PasswordEvidence passwordEvidence = new PasswordEvidence(password);
-            MongoCredential mongoCredential = new MongoCredential(mongoDbAuthMechanism, internalIdentity, passwordEvidence);
-
-            MongoClientSettings settings = new MongoClientSettings
+            if (options.Value.IsContained)
             {
-                Credential = mongoCredential,
-                Server = address
-            };
+                var address = new MongoServerAddress("mongo");
+                var mongoDbAuthMechanism = "SCRAM-SHA-1";
+                MongoInternalIdentity internalIdentity = new MongoInternalIdentity("admin", options.Value.User);
+                PasswordEvidence passwordEvidence = new PasswordEvidence(options.Value.Password);
+                MongoCredential mongoCredential = new MongoCredential(mongoDbAuthMechanism, internalIdentity, passwordEvidence);
 
-            return new MongoClient(settings);
+                MongoClientSettings settings = new MongoClientSettings
+                {
+                    Credential = mongoCredential,
+                    Server = address
+                };
+
+                return new MongoClient(settings);
+            }
+
+            var mongoClient = new MongoClient(new MongoUrl($@"mongodb://{options.Value.Host}:{options.Value.Port}"));
+
+            return mongoClient;
         }
 
         public IMongoCollection<T> GetAll

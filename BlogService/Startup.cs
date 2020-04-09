@@ -47,6 +47,10 @@ namespace BlogService
                   options.Database = Configuration.GetSection("MongoDb:Database").Value;
                   options.Container = Configuration.GetSection("MongoDb:Container").Value;
                   options.IsContained = Configuration["DOTNET_RUNNING_IN_CONTAINER"] != null;
+                  options.Host = Configuration.GetSection("MongoDb:Host").Value;
+                  options.Port = int.Parse(Configuration.GetSection("MongoDb:Port").Value);
+                  options.User = Configuration.GetSection("MongoDb:User").Value;
+                  options.Password = Configuration.GetSection("MongoDb:Password").Value;
               });
 
             services.AddTransient<IApplicationDbContext<ArticlesInfo>, ApplicationDbContext<ArticlesInfo>>();

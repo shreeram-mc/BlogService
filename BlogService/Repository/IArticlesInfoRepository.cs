@@ -2,6 +2,7 @@
 using BlogService.Models;
 using MongoDB.Driver;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace BlogService.Repository
@@ -78,7 +79,7 @@ namespace BlogService.Repository
 
             var update = Builders<ArticlesInfo>.Update
                         .Set("Name", articlesInfo.Name)
-                        .Set("Text", articlesInfo.Text);                                                
+                        .Set("Text",  articlesInfo.Text);                                                
 
             var result = await _context.Update(filter, update);
 
